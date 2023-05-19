@@ -1,0 +1,172 @@
+.bg-custom-navbar {
+  background: linear-gradient(to right, #f4f3f7, #cacfec, #f4f3f7);
+}
+
+.center-style {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+.custom-button {
+  background: linear-gradient(to right, #63429d, #495ab6, #63429d);
+  border: none;
+  color: #fff !important;
+  font-weight: 500 !important; 
+  transition: all 0.2s ease-in-out;
+  width: 150px; /* Adjust as needed */
+  height: 40px; /* Adjust as needed */
+  font-size: 24px; /* Adjust as needed */
+  margin: 5%;
+}
+
+.custom-button:hover {
+  background: linear-gradient(to right, #7b57c5, #5971c9, #7b57c5);
+  color: #fff;
+}
+
+.custom-button:active {
+  background: linear-gradient(to right, #4e3180, #3c4489, #4e3180);
+  color: #fff;
+}
+
+.buy-button {
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.3), #B7D8FF, #D5C5FF);
+  border: none;
+  color: #000000 !important; 
+  font-weight: 500 !important; 
+  transition: all 0.2s ease-in-out;
+  width: 150px; /* Adjust as needed */
+  height: 40px; /* Adjust as needed */
+  font-size: 24px; /* Adjust as needed */
+}
+
+.buy-button:hover {
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.2), #97B4E6, #B0A4E6);
+  color: #fff;
+}
+
+.buy-button:active {
+  background: linear-gradient(to right, #1e2d42, #1a2b49, #1e2d42);
+  color: #fff;
+}
+
+
+.logo {
+  margin-left: 100px;
+}
+
+.logo img {
+  /*border-radius: 100%;
+  box-shadow: 0px 0px 10px rgba(20, 73, 170, 0.5);*/
+  width: 72px;
+  height: 72px;
+}
+
+.brand-name {
+  font-size: 45px; /* Increase the font size */
+  font-weight: bold; /* Make the font bold */
+  background: linear-gradient(
+    to right,
+    #63429d,
+    #0c418c,
+    #63429d
+  ); /* Use grey-blue tones */
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.rainbow-button {
+  margin-right: 100px;
+}
+
+
+@media (max-width: 1700px) {
+  .brand-name {
+    font-size: 45px;
+  }
+  .logo {
+    margin-left: 40px;
+  }
+
+  .logo img {
+    width: 67px;
+    height: 67px;
+  }
+
+  .rainbow-button {
+    margin-right: 40px;
+  }
+}
+
+@media (max-width: 767px) {
+  .brand-name {
+    font-size: 30px;
+  }
+  .logo {
+    margin-left: 2px;
+  }
+
+  .logo img {
+    width: 50px;
+    height: 50px;
+  }
+
+  .rainbow-button {
+    margin-right: 2px;
+  }
+}
+
+@media (max-width: 280px) {
+  .brand-name {
+    font-size: 20px;
+  }
+  .logo {
+    margin-left: 5px;
+  }
+
+  .logo img {
+    width: 30px;
+    height: 30px;
+  }
+
+  .rainbow-button {
+    margin-right: 5px;
+  }
+}
+
+
+
+/********* PRUEBAS *************/
+
+/* Fuente de los titulos */
+.sfr-rounded {
+  font-family: SFRounded, ui-rounded, "SF Pro Rounded", system-ui, "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-size: 52px;
+  line-height: 52px;
+  vertical-align: baseline;
+  letter-spacing: 0.35px;
+  word-spacing: 0px;
+  margin: 0px 0px 16px;
+  padding: 0px;
+  font-weight: 700;
+  font-style: normal;
+  font-variant: normal;
+  text-transform: none;
+  text-decoration: none solid rgb(255, 255, 255);
+  text-align: center;
+  text-indent: 0px;
+}
+
+/* Para el slide del titulo */
+.slide-in {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.9s ease-in-out;
+}
+
+.slide-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
