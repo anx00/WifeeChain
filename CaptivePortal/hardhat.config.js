@@ -15,7 +15,6 @@ module.exports = {
     },
     hardhat: {
       accounts: {
-        url: "http://192.168.1.38:8545",
         count: 10,
         initialBalance: "100000000000000000000", // this sets the initial balance to 100 Teth
       },

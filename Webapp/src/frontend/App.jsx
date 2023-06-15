@@ -17,12 +17,12 @@ import ConnectToAP from "./components/Web3/ConnectToAP";
 import DisconnectFromAP from "./components/Web3/DisconnectFromAP";
 import SellTokens from "./components/Web3/SellTokens";
 import { Container, Row, Col } from "react-bootstrap";
+import CheckClients from "./components/Web3/CheckClients";
 
 function App() {
   const internetTokenAddress = InternetTokenAddress.address;
   const registerAccessPointAddress = RegisterAccessPointAddress.address;
   const connectAccessPointAddress = ConnectAccessPointAddress.address;
-
 
   return (
     <div>
@@ -66,11 +66,11 @@ function App() {
             path="/connect-access-point"
             element={
               <Container>
-                <h2>Conectarse a un Access Point</h2>
+                <h2>Conectarse a un Access Point / Comprobar access point</h2>
                 {/* <GetUserTokenButton
                   connectAccessPointAddress={connectAccessPointAddress}
                 /> */}
-                {/* <UserTokenInput
+                {/* <UserTokenInput 
                   userToken={userToken}
                   setUserToken={setUserToken}
                 /> */}
@@ -82,6 +82,7 @@ function App() {
                   connectAccessPointAddress={connectAccessPointAddress}
                   userToken={userToken}
                 /> */}
+                <CheckClients wiFeeAccessAddress={connectAccessPointAddress} />
               </Container>
             }
           />

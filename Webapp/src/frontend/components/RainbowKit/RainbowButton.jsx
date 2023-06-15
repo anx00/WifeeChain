@@ -61,14 +61,14 @@ export const RainbowButton = () => {
           token: ITK_ADDRESS,
         });
 
-        useEffect(() => {
-          setBalanceData(itkBalanceData);
-          const interval = setInterval(() => {
-            refetch();
-          }, REFRESH_INTERVAL);
+        // useEffect(() => {
+        //   setBalanceData(itkBalanceData);
+        //   const interval = setInterval(() => {
+        //     refetch();
+        //   }, REFRESH_INTERVAL);
 
-          return () => clearInterval(interval);
-        }, [itkBalanceData, refetch]);
+        //   return () => clearInterval(interval);
+        // }, [itkBalanceData, refetch]);
 
         const ready = mounted && authenticationStatus !== 'loading';
         const connected =
@@ -137,9 +137,9 @@ export const RainbowButton = () => {
                   </Button> */}
                   <Button onClick={openAccountModal} type="button">
                     {account.displayName}
-                    {displayITKBalance
+                    {/* {displayITKBalance
                       ? ` (${displayITKBalance} ITK)`
-                      : ''}
+                      : ''} */}
                   </Button>
                 </div>
               );

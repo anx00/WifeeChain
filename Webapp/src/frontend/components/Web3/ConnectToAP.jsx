@@ -45,53 +45,82 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
   const connectAccessPoint = async () => {
     if (contract && address && duration) {
       try {
-        const totalPrice = await contract.methods
-          .getConnectionPrice(mac, duration)
-          .call();
-        const intTotalPrice = parseInt(totalPrice); // Convert totalPrice to integer
-        console.log("totalPrice:", intTotalPrice, typeof intTotalPrice);
-
-        const apInfo = await contract.methods.getAPInfo(mac).call();
-        console.log("apInfo:", apInfo);
-
-        const apMaxTime = parseInt(apInfo.maxTime);
         const intDuration = parseInt(duration); // Convert duration to integer
-
-        // Hay que tener cuidado, porque apMaxTime es un string debido al unsigned int de solidity
-        // Entonces se está comparando entero con string, que es completamente valido en JS
-        console.log("apMaxTime:", apMaxTime, typeof apMaxTime);
         console.log("duration:", intDuration, typeof intDuration);
+  
+        const response = await fetch("/api/connect", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userToken: userToken,
+            duration: intDuration,
+          }),
+        });
 
-        if (intDuration <= apMaxTime) {
-          console.log("Conectando al Access Point...");
-          Swal.fire({
-            title: "Confirmar compra",
-            html: `Este conexión costará ${totalPrice} ITK.`,
-            showCancelButton: true,
-            confirmButtonText: "Sí, comprar",
-            cancelButtonText: "No, cancelar",
-          }).then(async (result) => {
-            if (result.isConfirmed) {
-              console.log(
-                "userToken:",
-                userToken,
-                "mac:",
-                mac,
-                "intDuration:",
-                intDuration
-              );
-              await contract.methods
-                .connect(userToken, mac, intDuration)
-                .send({ from: address });
-              console.log("Conectado al Access Point");
-            }
-          });
+        console.log(response);
+        console.log(response.ok);        
+  
+        if (!response.ok) {
+          // handle error
+          console.error("Error while connecting to the Access Point:", response.status);
         } else {
-          Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: `La duración máxima permitida por este Access Point es ${apMaxTime} segundos.`,
-          });
+          const { mac } = await response.json();
+          console.log("MAC Address from server:", mac);
+  
+          const totalPrice = await contract.methods
+            .getConnectionPrice(mac, intDuration)
+            .call();
+          const intTotalPrice = parseInt(totalPrice); // Convert totalPrice to integer
+          console.log("totalPrice:", intTotalPrice, typeof intTotalPrice);
+  
+          const apInfo = await contract.methods.getAPInfo(mac).call();
+          console.log("apInfo:", apInfo);
+  
+          const apMaxTime = parseInt(apInfo.maxTime);
+  
+          console.log("apMaxTime:", apMaxTime, typeof apMaxTime);
+  
+          if (intDuration <= apMaxTime) {
+            console.log("Connecting to the Access Point...");
+  
+            Swal.fire({
+              title: "Confirm purchase",
+              html: `This connection will cost ${totalPrice} ITK.`,
+              showCancelButton: true,
+              confirmButtonText: "Yes, buy",
+              cancelButtonText: "No, cancel",
+            }).then(async (result) => {
+              if (result.isConfirmed) {
+                console.log(
+                  "userToken:",
+                  userToken,
+                  "mac:",
+                  mac,
+                  "intDuration:",
+                  intDuration
+                );
+                await contract.methods
+                  .connect(userToken, mac, intDuration)
+                  .send({ from: address });
+                console.log("Connected to the Access Point");
+  
+                // Show success message
+                Swal.fire({
+                  icon: "success",
+                  title: "Success",
+                  text: "Connected to the access point successfully!",
+                });
+              }
+            });
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: `The maximum duration allowed by this Access Point is ${apMaxTime} seconds.`,
+            });
+          }
         }
       } catch (error) {
         console.error("Error al conectarse al Access Point:", error.message);
@@ -162,7 +191,7 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
                 style={{ borderRadius: "25px" }}
               />
             </Form.Group>
-            <Form.Group>
+            {/* <Form.Group>
               <Form.Label>MAC Address</Form.Label>
               <Form.Control
                 type="text"
@@ -171,7 +200,7 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
                 onChange={(e) => setMac(e.target.value)}
                 style={{ borderRadius: "25px" }}
               />
-            </Form.Group>
+            </Form.Group> */}
             <Form.Group>
               <Form.Label>Duration (seconds)</Form.Label>
               <Form.Control

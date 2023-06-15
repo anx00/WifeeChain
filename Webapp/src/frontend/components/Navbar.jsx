@@ -3,6 +3,7 @@ import { Navbar, Nav, Container } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { RainbowButton } from "./RainbowKit/RainbowButton";
 import "./main.css";
+import logo from '../assets/logo2.png';
 
 function Navigation() {
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -47,7 +48,7 @@ function Navigation() {
       <Container fluid>
         <Navbar.Brand href="#home" className="d-flex align-items-center logo">
           <img
-            src="../assets/logo2.png"
+            src={logo}
             className="d-inline-block align-top me-2"
             alt="WiFee Logo"
           />
