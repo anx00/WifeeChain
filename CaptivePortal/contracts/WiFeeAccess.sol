@@ -3,12 +3,14 @@ pragma solidity ^0.8.0;
 
 import "./WiFeeRegistry.sol";
 import "./InternetToken.sol";
+import "./RecompenseToken.sol";
 import "hardhat/console.sol";
 
 
 contract WiFeeAccess {
     WiFeeRegistry private wiFeeRegistry;
     InternetToken private internetToken;
+    RecompenseToken private recompenseToken; // add RecompenseToken contract instance
 
     struct Connection {
         string mac;
@@ -55,14 +57,25 @@ contract WiFeeAccess {
         _;
     }
 
-    constructor(
+constructor(
         address wiFeeRegistryAddress,
-        address payable internetTokenAddress
+        address payable internetTokenAddress,
+        address payable recompenseTokenAddress // add address for RecompenseToken
     ) {
         wiFeeRegistry = WiFeeRegistry(wiFeeRegistryAddress);
         internetToken = InternetToken(internetTokenAddress);
+        recompenseToken = RecompenseToken(recompenseTokenAddress); // initialize RecompenseToken instance
         owner = payable(msg.sender);
     }
+
+    // Function to get the start, actual, and end times of a connection
+    function getConnectionTimes(uint256 userToken) public view validUserToken(userToken) returns (uint256, uint256, uint256) {
+        address user = getTokenOwner(userToken);
+        Connection memory userConnection = connections[user];
+        uint256 actualTime = block.timestamp;
+        return (userConnection.startTime, actualTime, userConnection.endTime);
+    }
+
 
     // Funcion para obtener la información de un access point
     function getAPInfo(string memory _mac)
@@ -134,25 +147,47 @@ contract WiFeeAccess {
         emit Connected(userToken, mac, startTime, endTime);
     }
 
-    function disconnect(
-        uint256 userToken
-    ) public onlyUser(userToken) validUserToken(userToken) {
-        Connection storage userConnection = connections[msg.sender];
+    function disconnect(uint256 userToken) public validUserToken(userToken) {
+        address userAddress = getTokenOwner(userToken);
+        Connection storage userConnection = connections[userAddress];
         require(userConnection.isConnected, "User is not connected");
+        require(msg.sender == wiFeeRegistry.getAPInfo(userConnection.mac).owner, "Only the AP owner can disconnect a user");
 
-        WiFeeRegistry.AccessPoint memory ap = wiFeeRegistry.getAPInfo(
-            userConnection.mac
-        );
-        uint256 tokensForOwner = (userConnection.tokensPaid);
+        WiFeeRegistry.AccessPoint memory ap = wiFeeRegistry.getAPInfo(userConnection.mac);
+
+        uint256 actualEndTime = block.timestamp;
+        uint256 actualDuration = actualEndTime - userConnection.startTime;
+        uint256 tokensForOwner = actualDuration * ap.price * 10 ** 18;
+
+        // If the user disconnects early, refund the remaining tokens
+        console.log("actualEndTime: %s", actualEndTime);
+        console.log("userConnection.endTime: %s", userConnection.endTime);
+        if (actualEndTime < userConnection.endTime) {
+            uint256 refundAmount = userConnection.tokensPaid - tokensForOwner;
+            internetToken.transfer(userAddress, refundAmount);
+        }
 
         internetToken.transfer(ap.owner, tokensForOwner);
 
+        // Reward user with Recompense tokens based on the actual duration of the connection
+        uint256 rewardAmount = calculateReward(userConnection.startTime, actualEndTime);
+        recompenseToken.mint(userAddress, rewardAmount);
+
         userConnection.isConnected = false;
-        // Eliminamos el token de usuario de la lista de usuarios conectados del punto de acceso
         _removeUserTokenFromAP(userConnection.mac, userToken);
 
-        emit Disconnected(userToken, userConnection.mac, block.timestamp);
-        delete connections[msg.sender];
+        emit Disconnected(userToken, userConnection.mac, actualEndTime);
+        delete connections[userAddress];
+    }
+
+
+
+
+    // Function to calculate reward based on the duration of the connection
+    function calculateReward(uint256 startTime, uint256 endTime) private pure returns (uint256) {
+        uint256 duration = endTime - startTime;
+        uint256 reward = duration * 10 ** 18; // this is a simple example, in a real case the reward should be calculated based on the duration
+        return reward;
     }
 
     // la generación de tokens no es segura sin oráculo

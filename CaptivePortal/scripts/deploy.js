@@ -16,13 +16,21 @@ async function main() {
   await internetToken.deployed();
   console.log('InternetToken deployed at:', internetToken.address);
 
+  // Add these lines
+  const RecompenseToken = await ethers.getContractFactory('RecompenseToken');
+  const recompenseToken = await RecompenseToken.deploy();
+  await recompenseToken.deployed();
+  console.log('RecompenseToken deployed at:', recompenseToken.address);
+  // Add ends
+
   const WiFeeAccess = await ethers.getContractFactory('WiFeeAccess');
-  const wiFeeAccess = await WiFeeAccess.deploy(wiFeeRegistry.address, internetToken.address);
+  const wiFeeAccess = await WiFeeAccess.deploy(wiFeeRegistry.address, internetToken.address, recompenseToken.address);
   await wiFeeAccess.deployed();
   console.log('WiFeeAccess deployed at:', wiFeeAccess.address);
 
   saveFrontendFiles(wiFeeRegistry, 'WiFeeRegistry');
   saveFrontendFiles(internetToken, 'InternetToken');
+  saveFrontendFiles(recompenseToken, 'RecompenseToken'); // Save RecompenseToken contract as well
   saveFrontendFiles(wiFeeAccess, 'WiFeeAccess');
 }
 

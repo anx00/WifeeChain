@@ -92,6 +92,34 @@ const CheckClients = ({ wiFeeAccessAddress }) => {
     }
   };
 
+  const getConnectionTimes = async (userToken) => {
+    if (contract) {
+      try {
+        const connectionInfo = await contract.methods
+          .getConnectionInfo(userToken)
+          .call();
+  
+        const startTime = new Date(connectionInfo.startTime * 1000); // Convert Unix timestamp to milliseconds
+        const endTime = new Date(connectionInfo.endTime * 1000);
+  
+        const currentTime = new Date(); // Get the current time
+  
+        const startTimeString = startTime.toLocaleString();
+        const endTimeString = endTime.toLocaleString();
+        const currentTimeString = currentTime.toLocaleString();
+  
+        console.log(`Start Time: ${startTimeString}`);
+        console.log(`Current Time: ${currentTimeString}`);
+        console.log(`End Time: ${endTimeString}`);
+
+      } catch (error) {
+        console.error("Error getting connection times:", error.message);
+      }
+    }
+  };
+  
+  
+
   return (
     <Container>
       <h2>Check Clients</h2>
@@ -114,6 +142,8 @@ const CheckClients = ({ wiFeeAccessAddress }) => {
             <thead>
               <tr>
                 <th>Client Token</th>
+                <th>Disconnect</th>
+                <th>Check Connection Times</th>
               </tr>
             </thead>
             <tbody>
@@ -125,7 +155,15 @@ const CheckClients = ({ wiFeeAccessAddress }) => {
                       variant="danger"
                       onClick={() => disconnectUser(token)}
                     >
-                      X
+                      Disconnect
+                    </Button>
+                  </td>
+                  <td>
+                    <Button
+                      variant="info"
+                      onClick={() => getConnectionTimes(token)}
+                    >
+                      Check Connection Times
                     </Button>
                   </td>
                 </tr>

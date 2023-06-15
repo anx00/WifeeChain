@@ -47,6 +47,10 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
       try {
         const intDuration = parseInt(duration); // Convert duration to integer
         console.log("duration:", intDuration, typeof intDuration);
+
+        // Calculate the endTime
+        const nowInSeconds = Date.now() / 1000; // Convert to POSIX
+        const endTime = nowInSeconds + intDuration; // endTime in POSIX
   
         const response = await fetch("/api/connect", {
           method: "POST",
@@ -55,7 +59,8 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
           },
           body: JSON.stringify({
             userToken: userToken,
-            duration: intDuration,
+            //duration: intDuration,
+            endTime: endTime,
           }),
         });
 
