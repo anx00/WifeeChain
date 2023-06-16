@@ -125,9 +125,9 @@ constructor(
             "Duration exceeds access point max time"
         );
 
-        uint256 paymentAmount = duration *
-            ap.price *
-            internetToken.tokenPrice();
+        uint256 durationInMinutes = (duration + 30) / 60;
+        uint256 paymentAmount = durationInMinutes * ap.price * internetToken.tokenPrice();
+
         uint256 userTokenBalance = internetToken.balanceOf(msg.sender);
         require(
             userTokenBalance >= paymentAmount,
@@ -135,7 +135,7 @@ constructor(
         );
 
         internetToken.transferTokens(msg.sender, address(this), paymentAmount);
-        // Agregamos el token de usuario a la lista de usuarios conectados del punto de acceso
+        // Add the user token to the list of users connected to the access point
         _addUserTokenToAP(mac, userToken);
 
         userConnection.mac = mac;
@@ -156,8 +156,10 @@ constructor(
         WiFeeRegistry.AccessPoint memory ap = wiFeeRegistry.getAPInfo(userConnection.mac);
 
         uint256 actualEndTime = block.timestamp;
-        uint256 actualDuration = actualEndTime - userConnection.startTime;
-        uint256 tokensForOwner = actualDuration * ap.price * 10 ** 18;
+        //uint256 actualDuration = actualEndTime - userConnection.startTime;
+        uint256 actualDurationSeconds = actualEndTime - userConnection.startTime;
+        uint256 actualDurationMinutes = (actualDurationSeconds + 30) / 60; // Rounds to nearest minute
+        uint256 tokensForOwner = actualDurationMinutes * ap.price * 10 ** 18;
 
         // If the user disconnects early, refund the remaining tokens
         console.log("actualEndTime: %s", actualEndTime);
@@ -180,15 +182,14 @@ constructor(
         delete connections[userAddress];
     }
 
-
-
-
     // Function to calculate reward based on the duration of the connection
     function calculateReward(uint256 startTime, uint256 endTime) private pure returns (uint256) {
-        uint256 duration = endTime - startTime;
-        uint256 reward = duration * 10 ** 18; // this is a simple example, in a real case the reward should be calculated based on the duration
+        uint256 actualDurationSeconds = endTime - startTime;
+        uint256 actualDurationMinutes = (actualDurationSeconds + 30) / 60;
+        uint256 reward = actualDurationMinutes * 10 ** 18; 
         return reward;
     }
+
 
     // la generación de tokens no es segura sin oráculo
     // el oráculo requiere de LINK

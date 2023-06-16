@@ -185,8 +185,8 @@
       ]
     },
     "C:\\Users\\anxoo\\OneDrive\\Escritorio\\COSAS IMPORTANTES\\Informatica\\MUniCS\\TFM\\OpenWiFee\\CaptivePortal\\contracts\\WiFeeAccess.sol": {
-      "lastModificationDate": 1686851616336,
-      "contentHash": "a91520e40f0e2075c18da1ad499cd3b2",
+      "lastModificationDate": 1686928101263,
+      "contentHash": "c28e3970af22618ae535d16095d8c49c",
       "sourceName": "contracts/WiFeeAccess.sol",
       "solcConfig": {
         "version": "0.8.0",

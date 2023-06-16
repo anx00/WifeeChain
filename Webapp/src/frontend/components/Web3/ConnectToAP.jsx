@@ -46,12 +46,10 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
     if (contract && address && duration) {
       try {
         const intDuration = parseInt(duration); // Convert duration to integer
+        const durationInMinutes = parseInt(intDuration / 60);
         console.log("duration:", intDuration, typeof intDuration);
+        console.log("durationInMinutes:", durationInMinutes, typeof durationInMinutes);
 
-        // Calculate the endTime
-        const nowInSeconds = Date.now() / 1000; // Convert to POSIX
-        const endTime = nowInSeconds + intDuration; // endTime in POSIX
-  
         const response = await fetch("/api/connect", {
           method: "POST",
           headers: {
@@ -59,8 +57,6 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
           },
           body: JSON.stringify({
             userToken: userToken,
-            //duration: intDuration,
-            endTime: endTime,
           }),
         });
 
@@ -75,7 +71,7 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
           console.log("MAC Address from server:", mac);
   
           const totalPrice = await contract.methods
-            .getConnectionPrice(mac, intDuration)
+            .getConnectionPrice(mac, durationInMinutes)
             .call();
           const intTotalPrice = parseInt(totalPrice); // Convert totalPrice to integer
           console.log("totalPrice:", intTotalPrice, typeof intTotalPrice);
@@ -196,16 +192,6 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
                 style={{ borderRadius: "25px" }}
               />
             </Form.Group>
-            {/* <Form.Group>
-              <Form.Label>MAC Address</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="MAC Address"
-                value={mac}
-                onChange={(e) => setMac(e.target.value)}
-                style={{ borderRadius: "25px" }}
-              />
-            </Form.Group> */}
             <Form.Group>
               <Form.Label>Duration (seconds)</Form.Label>
               <Form.Control
