@@ -75,22 +75,34 @@ const CheckClients = ({ wiFeeAccessAddress }) => {
   };
 
   const disconnectUser = async (userToken) => {
-    try {
-      await contract.methods.disconnect(userToken).send({ from: accounts[0] });
-      // Update the connectedUserTokens state
-      const updatedUserTokens = connectedUserTokens.filter(
-        (token) => token !== userToken
-      );
-      setConnectedUserTokens(updatedUserTokens);
-    } catch (error) {
-      console.error("Error disconnecting user:", error.message);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "An error occurred while disconnecting the user.",
+    const requestOptions = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userToken: userToken })
+    };
+  
+    fetch("/api/disconnect", requestOptions)
+      .then(response => {
+        if (response.ok) {
+          // Update the connectedUserTokens state
+          const updatedUserTokens = connectedUserTokens.filter(
+            (token) => token !== userToken
+          );
+          setConnectedUserTokens(updatedUserTokens);
+        } else {
+          throw new Error("Failed to disconnect user");
+        }
+      })
+      .catch((error) => {
+        console.error("Error disconnecting user:", error.message);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "An error occurred while disconnecting the user.",
+        });
       });
-    }
   };
+  
 
   const getConnectionTimes = async (userToken) => {
     if (contract) {

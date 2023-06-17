@@ -17,48 +17,111 @@ web3.eth.accounts.wallet.add(account);
 
 let Connections = {};
 
-app.post('/connect', async (req, res) => {
-  let clientIp = (req.headers['x-forwarded-for'] || '').split(',').pop().trim() ||
-    req.connection.remoteAddress ||
-    req.socket.remoteAddress ||
-    req.connection.socket.remoteAddress;
-
+// Function to retrieve lease data
+async function getLeaseData(clientIp) {
   let leaseData;
   let leases = fs.readFileSync('/var/lib/misc/dnsmasq.leases', 'utf-8');
   leases.split('\n').forEach(lease => {
     let [expiryTime, macAddress, ipAddress, hostName, clientId] = lease.split(' ');
     if (ipAddress === clientIp) {
       let leaseExpiryDate = new Date(expiryTime * 1000);
-      leaseData = {leaseExpiryDate, macAddress, ipAddress, hostName, clientId };
+      leaseData = { leaseExpiryDate, macAddress, ipAddress, hostName, clientId };
     }
   });
 
-  console.log("Lease data: ", leaseData);
+  return leaseData;
+}
 
-  if (leaseData) {
-    exec('sudo iw wlan1 info', async (error, stdout, stderr) => {
+// Function to retrieve ssid and bssid
+function getSsidAndBssid() {
+  return new Promise((resolve, reject) => {
+    exec('sudo iw wlan1 info', (error, stdout, stderr) => {
       if (error) {
-        console.error(`Command execution error: ${error.message}`);
+        reject(`Command execution error: ${error.message}`);
         return;
       }
-  
+
       if (stderr) {
-        console.error(`Command execution stderr: ${stderr}`);
+        reject(`Command execution stderr: ${stderr}`);
         return;
       }
-  
+
       const info = stdout;
       const ssidRegex = /ssid (.+)/i;
       const bssidRegex = /addr (.+)/i;
-  
+
       const ssidMatch = info.match(ssidRegex);
       const bssidMatch = info.match(bssidRegex);
-  
+
       const ssid = ssidMatch ? ssidMatch[1].trim() : 'SSID not found';
       const bssid = bssidMatch ? bssidMatch[1].trim() : 'BSSID not found';
 
-      const userToken = req.body.userToken; 
+      resolve({ ssid, bssid });
+    });
+  });
+}
 
+// Function to retrieve client IP
+function getClientIp(req) {
+  let clientIp = (req.headers['x-forwarded-for'] || '').split(',').pop().trim() ||
+    req.connection.remoteAddress ||
+    req.socket.remoteAddress ||
+    req.connection.socket.remoteAddress;
+
+  return clientIp;
+}
+
+// Function to retrieve AP info
+async function getAPInfo(bssid) {
+  try {
+    const apInfo = await contract.methods.getAPInfo(bssid).call({from: account.address});
+    console.log(apInfo);
+    return apInfo;
+  } catch (error) {
+    console.log('Error calling getAPInfo:', error);
+    throw error;
+  }
+}
+
+// Function to allow traffic for authenticated user
+function allowTraffic(macAddress) {
+  return new Promise((resolve, reject) => {
+    exec(`sudo iptables -I FORWARD -m mac --mac-source ${macAddress} -j ACCEPT`, (error, stdout, stderr) => {
+      if (error) {
+        console.log(`Error updating iptables: ${error}`);
+        reject(error);
+        return;
+      }
+      resolve(stdout);
+    });
+  });
+}
+
+// Function to deny traffic for authenticated user
+function denyTraffic(macAddress) {
+  return new Promise((resolve, reject) => {
+    exec(`sudo iptables -D FORWARD -m mac --mac-source ${macAddress} -j ACCEPT`, (error, stdout, stderr) => {
+      if (error) {
+        console.log(`Error updating iptables: ${error}`);
+        reject(error);
+        return;
+      }
+      resolve(stdout);
+    });
+  });
+}
+
+// ENDPOINT to obtain the ap info
+app.post('/ap-info', async (req, res) => {
+  
+  let clientIp = getClientIp(req);
+  let leaseData = await getLeaseData(clientIp);
+  console.log("Lease data: ", leaseData);
+
+  if (leaseData) {
+    try {
+      const { ssid, bssid } = await getSsidAndBssid();
+      const userToken = req.body.userToken; 
       const now = new Date();
 
       Connections[clientIp] = { ...req.body, ...leaseData, ssid, bssid };
@@ -70,19 +133,64 @@ app.post('/connect', async (req, res) => {
 
       // Retrieve the AP info
       try {
-        const apInfo = await contract.methods.getAPInfo(bssid).call({from: account.address});
-        console.log(apInfo);
+        const apInfo = await getAPInfo(bssid);
       } catch (error) {
-        console.log('Error calling getAPInfo:', error);
+        console.error('Error fetching AP info:', error);
+        res.status(500).json({ error: 'Error fetching AP info' });
+        return;
+      }
+      // Respond with BSSID/MAC
+      res.status(200).json({ mac: bssid });
+    } catch (error) {
+      console.error(`Error obtaining ssid and bssid: ${error}`);
+      // Handle the error here, maybe return a response to indicate the error
+      res.status(500).json({ error: `Failed to obtain SSID and BSSID: ${error}` });
+      return;
+    }
+  } else {
+    // Send appropriate error response
+    res.status(400).json({ error: 'Unable to connect due to missing lease data' });
+  }
+});
+
+
+// ENDPOINT to allow traffic for authenticated user
+app.post('/connect', async (req, res) => {
+  
+  let clientIp = getClientIp(req);
+  let leaseData = await getLeaseData(clientIp);
+  console.log("Lease data: ", leaseData);
+
+  if (leaseData) {
+    try {
+      const { ssid, bssid } = await getSsidAndBssid();
+      const userToken = req.body.userToken; 
+      const now = new Date();
+
+      Connections[clientIp] = { ...req.body, ...leaseData, ssid, bssid };
+      console.log("Connections: ", Connections);
+
+      // Start logging
+      let logEntry = `Process: ${process.pid}, Start time: ${now.toISOString()}, Client IP: ${clientIp}, MAC: ${leaseData.macAddress}, User Token: ${req.body.userToken}, BSSID: ${bssid}, SSID: ${ssid}\nConnection data:\n${JSON.stringify(Connections[clientIp], null, 2)}\n`;
+      fs.appendFileSync('log.txt', logEntry);
+
+      // Retrieve the AP info
+      try {
+        const apInfo = await getAPInfo(ssidBssid.bssid);
+      } catch (error) {
+        console.error('Error fetching AP info:', error);
+        res.status(500).json({ error: 'Error fetching AP info' });
+        return;
       }
 
       // Allow traffic for authenticated user
-      exec(`sudo iptables -I FORWARD -m mac --mac-source ${leaseData.macAddress} -j ACCEPT`, (error, stdout, stderr) => {
-        if (error) {
-          console.log(`Error updating iptables: ${error}`);
-          return;
-        }
-      });
+      try {
+        await allowTraffic(leaseData.macAddress);
+      } catch (error) {
+        console.error('Error allowing traffic:', error);
+        res.status(500).json({ error: 'Error allowing traffic' });
+        return;
+      }
 
       let timeoutDuration = leaseData.leaseExpiryDate.getTime() - new Date().getTime(); // default timeout
       let timeout; // Declare the timeout variable outside of the setInterval function
@@ -125,13 +233,7 @@ app.post('/connect', async (req, res) => {
           // Check if the user is still connected
           if (connectionInfo.isConnected) {
               // Revoke internet access
-              exec(`sudo iptables -D FORWARD -m mac --mac-source ${leaseData.macAddress} -j ACCEPT`, (error, stdout, stderr) => {
-                  if (error) {
-                      console.log(`Error updating iptables: ${error}`);
-                      return;
-                  }
-              });
-
+              await denyTraffic(leaseData.macAddress);
               // Disconnect the user in the smart contract
               const receipt = await contract.methods.disconnect(req.body.userToken).send({ from: account.address, gas: 3000000 });
               console.log('Receipt:', receipt);
@@ -152,36 +254,16 @@ app.post('/connect', async (req, res) => {
 
       // Respond with BSSID/MAC
       res.status(200).json({ mac: bssid });
-    });
+    } catch (error) {
+      console.error(`Error obtaining ssid and bssid: ${error}`);
+      // Handle the error here, maybe return a response to indicate the error
+      res.status(500).json({ error: `Failed to obtain SSID and BSSID: ${error}` });
+      return;
+    }
   } else {
     // Send appropriate error response
     res.status(400).json({ error: 'Unable to connect due to missing lease data' });
   }
 });
-
-app.post('/manual-disconnect', async (req, res) => {
-  const userToken = req.body.userToken;
-  const macAddress = req.body.macAddress; // The MAC address is needed to update the iptables
-
-  try {
-    // Disconnect the user in the smart contract
-    const receipt = await contract.methods.disconnect(userToken).send({ from: account.address, gas: 3000000 });
-    console.log('Receipt:', receipt);
-
-    // Revoke internet access
-    exec(`sudo iptables -D FORWARD -m mac --mac-source ${macAddress} -j ACCEPT`, (error, stdout, stderr) => {
-      if (error) {
-        console.log(`Error updating iptables: ${error}`);
-        return;
-      }
-    });
-
-    res.status(200).json({ message: 'User has been manually disconnected' });
-  } catch (error) {
-    console.error('Error disconnecting user:', error);
-    res.status(500).json({ error: 'Error disconnecting user' });
-  }
-});
-
 
 app.listen(5555, () => console.log('Server listening on port 5555'));

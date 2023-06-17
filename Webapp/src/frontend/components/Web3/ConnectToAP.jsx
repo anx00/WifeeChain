@@ -50,7 +50,7 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
         console.log("duration:", intDuration, typeof intDuration);
         console.log("durationInMinutes:", durationInMinutes, typeof durationInMinutes);
 
-        const response = await fetch("/api/connect", {
+        const response = await fetch("/api/ap-info", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -65,7 +65,7 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
   
         if (!response.ok) {
           // handle error
-          console.error("Error while connecting to the Access Point:", response.status);
+          console.error("Error obtaining Access Point info:", response.status);
         } else {
           const { mac } = await response.json();
           console.log("MAC Address from server:", mac);
@@ -102,11 +102,30 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
                   "intDuration:",
                   intDuration
                 );
+            
+                // Perform the blockchain transaction
                 await contract.methods
                   .connect(userToken, mac, intDuration)
                   .send({ from: address });
+            
+                // Now make the call to /connect
+                const connectResponse = await fetch("/api/connect", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    userToken: userToken,
+                  }),
+                });
+            
+                if (!connectResponse.ok) {
+                  console.error("Error while connecting to the Access Point:", connectResponse.status);
+                  return;
+                }
+            
                 console.log("Connected to the Access Point");
-  
+            
                 // Show success message
                 Swal.fire({
                   icon: "success",
