@@ -1,4 +1,3 @@
-
 const express = require('express');
 const fs = require('fs');
 const { exec } = require('child_process');
@@ -87,7 +86,7 @@ async function getAPInfo(bssid) {
 // Function to allow traffic for authenticated user and limit bandwidth
 function allowTraffic(macAddress, ipAddress, bandwidth) {
   return new Promise((resolve, reject) => {
-    exec(`sudo iptables -I FORWARD -m mac --mac-source ${macAddress} -j ACCEPT -m comment --comment "Monitor"`, (error, stdout, stderr) => {
+    exec(`sudo iptables -I FORWARD -m mac --mac-source ${macAddress} -j ACCEPT`, (error, stdout, stderr) => {
       if (error) {
         console.log(`Error updating iptables: ${error}`);
         reject(error);
@@ -111,7 +110,7 @@ function allowTraffic(macAddress, ipAddress, bandwidth) {
 // Function to deny traffic for authenticated user
 function denyTraffic(macAddress) {
   return new Promise((resolve, reject) => {
-    exec(`sudo iptables -D FORWARD -m mac --mac-source ${macAddress} -j ACCEPT -m comment --comment "Monitor"`, (error, stdout, stderr) => {
+    exec(`sudo iptables -D FORWARD -m mac --mac-source ${macAddress} -j ACCEPT`, (error, stdout, stderr) => {
       if (error) {
         console.log(`Error updating iptables: ${error}`);
         reject(error);
