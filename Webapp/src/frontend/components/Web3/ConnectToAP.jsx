@@ -143,7 +143,7 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
           }
         }
       } catch (error) {
-        console.error("Error al conectarse al Access Point:", error.message);
+        console.error("Error connecting to the Access point:", error.message);
         if (error.message.includes("Access point not active")) {
           Swal.fire({
             icon: "error",

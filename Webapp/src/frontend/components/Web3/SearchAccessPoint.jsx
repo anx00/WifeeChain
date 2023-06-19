@@ -77,9 +77,9 @@ const SearchAccessPoint = ({ registerAccessPointAddress }) => {
 
   return (
     <Container>
-      <h2>Buscar Access Point</h2>
+      <h2>Search Access Point</h2>
       <Form.Group>
-        <Form.Label>Buscar Access Point por MAC</Form.Label>
+        <Form.Label>Search Access Point by MAC</Form.Label>
         <Form.Control
           type="text"
           placeholder="MAC Address"
@@ -91,17 +91,17 @@ const SearchAccessPoint = ({ registerAccessPointAddress }) => {
           onClick={getAccessPointInfo}
           className="mt-2"
         >
-          Buscar Access Point
+          Search Access Point
         </Button>
       </Form.Group>
       {accessPointInfo && (
         <div>
-          <h3>Información del Access Point</h3>
+          <h3>Information about Access Point</h3>
           <p>
             <strong>SSID:</strong> {accessPointInfo.ssid}
           </p>
           <p>
-            <strong>MAC Address:</strong> {accessPointInfo.mac}
+            <strong>BSSID/MAC Address:</strong> {accessPointInfo.mac}
           </p>
           <p>
             <strong>ITK:</strong> {accessPointInfo.price}

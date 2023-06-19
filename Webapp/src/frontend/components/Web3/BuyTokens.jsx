@@ -68,22 +68,22 @@ const BuyTokens = ({ internetTokenAddress }) => {
         await contract.methods
           .buyTokens()
           .send({ from: address, value: tokensToBuyInWei });
-        console.log("Tokens comprados");
+        console.log("Tokens bought!");
         setAmount("");
 
         // Show success Swal alert
         const quantityETH = amount * priceTokenEth;
         Swal.fire({
           icon: "success",
-          title: "Tokens comprados!",
-          html: `Has comprado ${amount} ITK por ${quantityETH} ETH.`,
+          title: "Tokens bought!",
+          html: `You just bought ${amount} ITK for ${quantityETH} ETH.`,
         });
       } catch (error) {
-        console.error("Error al comprar tokens:", error.message);
+        console.error("Error buying tokens:", error.message);
         // Show error Swal alert
         Swal.fire({
           icon: "error",
-          title: "Error al comprar tokens",
+          title: "Error buying tokens",
           text: error.message,
         });
       }

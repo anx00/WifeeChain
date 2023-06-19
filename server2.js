@@ -84,8 +84,8 @@ async function getAPInfo(bssid) {
   }
 }
 
-// Function to allow traffic for authenticated user
-function allowTraffic(macAddress) {
+// Function to allow traffic for authenticated user and limit bandwidth
+function allowTraffic(macAddress, ipAddress, bandwidth) {
   return new Promise((resolve, reject) => {
     exec(`sudo iptables -I FORWARD -m mac --mac-source ${macAddress} -j ACCEPT -m comment --comment "Monitor"`, (error, stdout, stderr) => {
       if (error) {
@@ -93,10 +93,20 @@ function allowTraffic(macAddress) {
         reject(error);
         return;
       }
-      resolve(stdout);
+
+      // Apply bandwidth limit using tcset command
+      exec(`sudo tcset --device wlan1 --rate ${bandwidth} --direction outgoing --network ${ipAddress}`, (error, stdout, stderr) => {
+        if (error) {
+          console.log(`Error setting bandwidth limit: ${error}`);
+          reject(error);
+          return;
+        }
+        resolve(stdout);
+      });
     });
   });
 }
+
 
 // Function to deny traffic for authenticated user
 function denyTraffic(macAddress) {
@@ -254,7 +264,7 @@ app.post('/connect', async (req, res) => {
     // Allow the traffic
     try {
       console.log(`[CONNECT] Attempting to allow traffic for MAC address: ${connection.macAddress}`);
-      const result = await allowTraffic(connection.macAddress);
+      const result = await allowTraffic(connection.macAddress, connection.ipAddress, "100Kbps");
       console.log("[CONNECT] Successfully allowed traffic");
     } catch (error) {
       console.error('[CONNECT] Error allowing traffic:', error);

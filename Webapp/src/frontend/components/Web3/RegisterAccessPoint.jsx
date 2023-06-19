@@ -83,7 +83,7 @@ const RegisterAccessPoint = ({ registerAccessPointAddress }) => {
         setMaxTime("");
 
       } catch (error) {
-        console.error("Error al registrar el Access Point:", error.message);
+        console.error("Error registering Access Point:", error.message);
   
         let errorMessage = "An error occurred while registering the access point.";
   
@@ -112,7 +112,7 @@ const RegisterAccessPoint = ({ registerAccessPointAddress }) => {
   
   return (
     <Container>
-      <h2>Registrar Access Point</h2>
+      <h2>Register Access Point</h2>
       <Form>
         <Form.Group>
           <Form.Label>SSID</Form.Label>
@@ -159,7 +159,7 @@ const RegisterAccessPoint = ({ registerAccessPointAddress }) => {
           </Col>
         </Row>
         <Button variant="primary" onClick={registerAccessPoint}>
-          Registrar Access Point
+          Register Access Point
         </Button>
       </Form>
     </Container>
