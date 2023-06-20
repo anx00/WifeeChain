@@ -104,12 +104,19 @@ const CheckClients = ({ wiFeeAccessAddress }) => {
   };
   
 
-  const getConnectionTimes = async (userToken) => {
+  const getClientInfo = async (userToken) => {
     if (contract) {
       try {
         const connectionInfo = await contract.methods
           .getConnectionInfo(userToken)
           .call();
+
+        const usageData = await contract.methods
+          .getConnectionBandwidthDataLimit(userToken)
+          .call();
+
+        const bandwidth = usageData.bandwidth;
+        const dataLimit = usageData.dataLimit;
   
         const startTime = new Date(connectionInfo.startTime * 1000); // Convert Unix timestamp to milliseconds
         const endTime = new Date(connectionInfo.endTime * 1000);
@@ -123,6 +130,8 @@ const CheckClients = ({ wiFeeAccessAddress }) => {
         console.log(`Start Time: ${startTimeString}`);
         console.log(`Current Time: ${currentTimeString}`);
         console.log(`End Time: ${endTimeString}`);
+        console.log(`Bandwidth Limit: ${bandwidth}`);
+        console.log(`Data Limit: ${dataLimit}`);
 
       } catch (error) {
         console.error("Error getting connection times:", error.message);
@@ -173,9 +182,9 @@ const CheckClients = ({ wiFeeAccessAddress }) => {
                   <td>
                     <Button
                       variant="info"
-                      onClick={() => getConnectionTimes(token)}
+                      onClick={() => getClientInfo(token)}
                     >
-                      Check Connection Times
+                      Check Client Info
                     </Button>
                   </td>
                 </tr>

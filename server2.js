@@ -6,6 +6,8 @@ const app = express();
 require('dotenv').config();
 app.use(express.json());
 
+const latitude = process.env.LATITUDE;
+const longitude = process.env.LONGITUDE;
 const web3 = new Web3(process.env.WEB3_URL);
 const contractABI = JSON.parse(fs.readFileSync('./contractsABI/WiFeeAccess.json', 'utf-8')).abi;
 const contractAddress = JSON.parse(fs.readFileSync('./contractsABI/WiFeeAccess-address.json', 'utf-8')).address;
@@ -108,7 +110,8 @@ function allowTraffic(macAddress, ipAddress, bandwidth) {
 
 
 // Function to deny traffic for authenticated user
-function denyTraffic(macAddress) {
+// Function to deny traffic for authenticated user and remove bandwidth limit
+function denyTraffic(macAddress, ipAddress) {
   return new Promise((resolve, reject) => {
     exec(`sudo iptables -D FORWARD -m mac --mac-source ${macAddress} -j ACCEPT`, (error, stdout, stderr) => {
       if (error) {
@@ -116,10 +119,20 @@ function denyTraffic(macAddress) {
         reject(error);
         return;
       }
-      resolve(stdout);
+
+      // Remove bandwidth limit using tcdel command
+      exec(`sudo tcdel --device wlan1 --direction outgoing --network ${ipAddress}`, (error, stdout, stderr) => {
+        if (error) {
+          console.log(`Error deleting bandwidth limit: ${error}`);
+          reject(error);
+          return;
+        }
+        resolve(stdout);
+      });
     });
   });
 }
+
 
 // Run this function periodically
 async function checkForDisconnectedClients() {
@@ -142,7 +155,7 @@ async function checkForDisconnectedClients() {
           
           try {
             // Deny the traffic
-            await denyTraffic(connection.macAddress);
+            await denyTraffic(connection.macAddress, ip);
             // Disconnect the user in the smart contract
             await contract.methods.disconnect(connection.userToken).send({ from: account.address, gas: 3000000 });
             // Remove the connection
@@ -170,6 +183,29 @@ app.post('/ap-info', async (req, res) => {
     
     let leaseData = await getLeaseData(clientIp);
     console.log("[AP-INFO] Lease data: ", leaseData);
+
+    // const location = req.body.location;
+    // console.log(`[AP-INFO] Location is: ${location}`);
+    // //print env file location variables
+    // console.log(`[AP-INFO] Latitude is: ${latitude}`);
+    // console.log(`[AP-INFO] Longitude is: ${longitude}`);
+    // //print req body location variables
+    // console.log(`[AP-INFO] Latitude is: ${location.latitude}`);
+    // console.log(`[AP-INFO] Longitude is: ${location.longitude}`);
+
+    // // Check if location object contains required properties
+    // if (!location || !location.latitude || !location.longitude) {
+    //   console.log("[AP-INFO] Incorrect location format received");
+    //   res.status(400).json({ error: 'Incorrect location format' });
+    //   return;
+    // }
+
+    // // Check if the latitude and longitude match the one provided in .env
+    // if (location.latitude !== latitude || location.longitude !== longitude) {
+    //   console.log("[AP-INFO] Mismatch in location");
+    //   res.status(403).json({ error: 'Mismatch in location' });
+    //   return;
+    // }
   
     if (leaseData) {
       try {
@@ -242,6 +278,16 @@ app.post('/connect', async (req, res) => {
       return;
     }
     
+    // Get bandwidth and data usage limit from the blockchain
+    let bandwidthDataLimit;
+    try {
+      console.log(`[CONNECT] Attempting to get bandwidth and data usage limit for user token: ${userToken}`);
+      bandwidthDataLimit = await contract.methods.getConnectionBandwidthDataLimit(userToken).call();
+    } catch (error) {
+      console.error("Error getting bandwidth and data usage limit from the blockchain: ", error);
+      return;
+    }
+
     const blockchainEndTime = connectionTimes[2]; 
     const expiryConnection = new Date(blockchainEndTime * 1000);
     console.log(`[CONNECT] Connection expiry time is: ${expiryConnection}`);
@@ -257,13 +303,19 @@ app.post('/connect', async (req, res) => {
   
     let connection = Connections[clientIp];
     // Add the expiryConnection to the connection
+    bandwithInKbps = bandwidthDataLimit[0] * 1000;
+    dataUsageLimitInMB = bandwidthDataLimit[1] * 1000;
+
     connection.expiryConnection = expiryConnection;
+    connection.bandwidth = `${bandwithInKbps}Kbps`;
+    connection.dataUsageLimit = `${dataUsageLimitInMB}MB`;
     console.log(`[CONNECT] Updated connection info: ${JSON.stringify(connection)}`);
+
     
     // Allow the traffic
     try {
       console.log(`[CONNECT] Attempting to allow traffic for MAC address: ${connection.macAddress}`);
-      const result = await allowTraffic(connection.macAddress, connection.ipAddress, "100Kbps");
+      const result = await allowTraffic(connection.macAddress, connection.ipAddress, connection.bandwidth, connection.dataUsageLimit);
       console.log("[CONNECT] Successfully allowed traffic");
     } catch (error) {
       console.error('[CONNECT] Error allowing traffic:', error);
@@ -280,7 +332,7 @@ app.post('/connect', async (req, res) => {
         try {
             console.log(`[CONNECT] Attempting automatic disconnection for IP: ${clientIp}`);
             // Deny the traffic
-            await denyTraffic(connection.macAddress);
+            await denyTraffic(connection.macAddress, connection.ipAddress);
             // Disconnect the user in the smart contract
             await contract.methods.disconnect(userToken).send({ from: account.address, gas: 3000000 });
             // Remove the connection
@@ -299,7 +351,7 @@ app.post('/connect', async (req, res) => {
     console.log("[CONNECT] Response sent, connection successful");
   });
   
-  
+
 
 // ENDPOINT to disconnect user
 app.post('/disconnect', async (req, res) => {
@@ -338,7 +390,7 @@ app.post('/disconnect', async (req, res) => {
     // Deny the traffic
     try {
       console.log(`[DISCONNECT] Attempting to deny traffic for MAC address: ${connection.macAddress}`);
-      const result = await denyTraffic(connection.macAddress);
+      const result = await denyTraffic(connection.macAddress, connection.ipAddress);
       console.log("[DISCONNECT] Successfully denied traffic");
     } catch (error) {
       console.error('[DISCONNECT] Error denying traffic:', error);
@@ -370,6 +422,6 @@ app.post('/disconnect', async (req, res) => {
     console.log("[DISCONNECT] Response sent, disconnection successful");
   });
 
-// Run checkForDisconnectedClients every minute
+// Run checkForDisconnectedClients every second
 setInterval(checkForDisconnectedClients, 1000);
 app.listen(5555, () => console.log('Server listening on port 5555'));

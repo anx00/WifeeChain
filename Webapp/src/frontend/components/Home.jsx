@@ -9,9 +9,34 @@ import "./main.css";
 function Home({ connectAccessPointAddress, internetTokenAddress }) {
   const [height, setHeight] = useState(0);
   const [userToken, setUserToken] = useState("");
+  const [location, setLocation] = useState({});
 
   useEffect(() => {
     setHeight(window.innerHeight);
+  }, []);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.log(error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 50000,
+          maximumAge: 0,
+        }
+      );
+      console.log(location.latitude, location.longitude);
+    } else {
+      console.log("Geolocation is not supported by this browser.");
+    }
   }, []);
 
   return (
@@ -30,11 +55,13 @@ function Home({ connectAccessPointAddress, internetTokenAddress }) {
               backgroundPosition: "center",
             }}
           >
-            { <GetUserTokenButton
-              connectAccessPointAddress={connectAccessPointAddress}
-              userToken={userToken}
-              setUserToken={setUserToken}
-            /> }
+            {
+              <GetUserTokenButton
+                connectAccessPointAddress={connectAccessPointAddress}
+                userToken={userToken}
+                setUserToken={setUserToken}
+              />
+            }
           </div>
         </Parallax>
         <Parallax y={[-40, 40]}>
@@ -53,40 +80,28 @@ function Home({ connectAccessPointAddress, internetTokenAddress }) {
             <BuyTokens internetTokenAddress={internetTokenAddress} />
           </div>
         </Parallax>
-        { <Parallax y={[-40, 40]}>
-          <div
-            style={{
-              height: `${height}px`,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              background:
-                "linear-gradient(to right, #D5C5FF 30%, #B7D8FF, #2E2E2E)",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          >
-            <ConnectToAP
-              connectAccessPointAddress={connectAccessPointAddress}
-              userToken={userToken}
-            />
-          </div>
-        </Parallax> }
-        {/* <Parallax y={[-60, 60]}>
-          <div
-            style={{
-              height: `${height}px`,
-              backgroundImage: "url('/assets/green.jpg')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          >
-            <DisconnectFromAP
-              connectAccessPointAddress={connectAccessPointAddress}
-              userToken={userToken}
-            />
-          </div>
-        </Parallax> */}
+        {
+          <Parallax y={[-40, 40]}>
+            <div
+              style={{
+                height: `${height}px`,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                background:
+                  "linear-gradient(to right, #D5C5FF 30%, #B7D8FF, #2E2E2E)",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            >
+              <ConnectToAP
+                connectAccessPointAddress={connectAccessPointAddress}
+                userToken={userToken}
+                location={location}
+              />
+            </div>
+          </Parallax>
+        }
       </div>
     </ParallaxProvider>
   );

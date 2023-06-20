@@ -8,12 +8,14 @@ import ScrollTrigger from "react-scroll-trigger";
 
 import UserTokenInput from "./UserTokenInput";
 
-const ConnectToAP = ({ connectAccessPointAddress }) => {
+const ConnectToAP = ({ connectAccessPointAddress, location }) => {
   const [web3, setWeb3] = useState(null);
   const [accounts, setAccounts] = useState([]);
   const [contract, setContract] = useState(null);
   const [mac, setMac] = useState("");
   const [duration, setDuration] = useState("");
+  const [bandwidth, setBandwidth] = useState("");
+  const [dataUsage, setDataUsage] = useState("");
   const [userToken, setUserToken] = useState("");
 
   const { address, status } = useAccount();
@@ -45,10 +47,12 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
   const connectAccessPoint = async () => {
     if (contract && address && duration) {
       try {
-        const intDuration = parseInt(duration); // Convert duration to integer
-        const durationInMinutes = parseInt(intDuration / 60);
-        console.log("duration:", intDuration, typeof intDuration);
-        console.log("durationInMinutes:", durationInMinutes, typeof durationInMinutes);
+        const intDuration = parseInt(duration);
+        const intBandwidth = parseInt(bandwidth);
+        const intDataUsage = parseInt(dataUsage);
+        console.log("duration:", intDuration, "minutes");
+        console.log("bandwidth:", intBandwidth, "Mbps");
+        console.log("dataUsage:", intDataUsage, "GB");
 
         const response = await fetch("/api/ap-info", {
           method: "POST",
@@ -57,35 +61,36 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
           },
           body: JSON.stringify({
             userToken: userToken,
+            location: location,
           }),
         });
 
         console.log(response);
-        console.log(response.ok);        
-  
+        console.log(response.ok);
+
         if (!response.ok) {
           // handle error
           console.error("Error obtaining Access Point info:", response.status);
         } else {
           const { mac } = await response.json();
           console.log("MAC Address from server:", mac);
-  
+
           const totalPrice = await contract.methods
-            .getConnectionPrice(mac, durationInMinutes)
+            .getConnectionPrice(mac, duration)
             .call();
           const intTotalPrice = parseInt(totalPrice); // Convert totalPrice to integer
           console.log("totalPrice:", intTotalPrice, typeof intTotalPrice);
-  
+
           const apInfo = await contract.methods.getAPInfo(mac).call();
           console.log("apInfo:", apInfo);
-  
+
           const apMaxTime = parseInt(apInfo.maxTime);
-  
+
           console.log("apMaxTime:", apMaxTime, typeof apMaxTime);
-  
+
           if (intDuration <= apMaxTime) {
             console.log("Connecting to the Access Point...");
-  
+
             Swal.fire({
               title: "Confirm purchase",
               html: `This connection will cost ${totalPrice} ITK.`,
@@ -100,14 +105,24 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
                   "mac:",
                   mac,
                   "intDuration:",
-                  intDuration
+                  intDuration,
+                  "bandwidth:",
+                  bandwidth,
+                  "dataUsage:",
+                  dataUsage
                 );
-            
+
                 // Perform the blockchain transaction
                 await contract.methods
-                  .connect(userToken, mac, intDuration)
+                  .connect(
+                    userToken,
+                    mac,
+                    intDuration,
+                    intBandwidth,
+                    intDataUsage
+                  )
                   .send({ from: address });
-            
+
                 // Now make the call to /connect
                 const connectResponse = await fetch("/api/connect", {
                   method: "POST",
@@ -118,14 +133,17 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
                     userToken: userToken,
                   }),
                 });
-            
+
                 if (!connectResponse.ok) {
-                  console.error("Error while connecting to the Access Point:", connectResponse.status);
+                  console.error(
+                    "Error while connecting to the Access Point:",
+                    connectResponse.status
+                  );
                   return;
                 }
-            
+
                 console.log("Connected to the Access Point");
-            
+
                 // Show success message
                 Swal.fire({
                   icon: "success",
@@ -200,7 +218,7 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
           Step 3. Connect!
         </h2>
         {status === "connected" && (
-          <Form>
+          <Form style={{ width: "100%" }}> 
             <Form.Group>
               <Form.Label>User Token</Form.Label>
               <Form.Control
@@ -211,17 +229,49 @@ const ConnectToAP = ({ connectAccessPointAddress }) => {
                 style={{ borderRadius: "25px" }}
               />
             </Form.Group>
-            <Form.Group>
-              <Form.Label>Duration (seconds)</Form.Label>
-              <Form.Control
-                type="number"
-                min="0"
-                placeholder="Duration"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                style={{ borderRadius: "25px" }}
-              />
-            </Form.Group>
+
+            <div
+              style={{
+                border: "2px solid #5971c9",
+                borderRadius: "15px",
+                background: "white",
+                marginTop: "10px",
+                padding: "15px"
+              }}
+            >
+              <Form.Group controlId="duration">
+                <Form.Label>Duration: {duration} minutes</Form.Label>
+                <Form.Range
+                  min="30"
+                  max="120"
+                  step="30"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                />
+              </Form.Group>
+
+              <Form.Group controlId="bandwidth">
+                <Form.Label>Bandwidth: {bandwidth} Mbps</Form.Label>
+                <Form.Range
+                  min="10"
+                  max="100"
+                  step="30"
+                  value={bandwidth}
+                  onChange={(e) => setBandwidth(e.target.value)}
+                />
+              </Form.Group>
+
+              <Form.Group controlId="dataUsage">
+                <Form.Label>Data Usage: {dataUsage} GB</Form.Label>
+                <Form.Range
+                  min="1"
+                  max="10"
+                  step="1"
+                  value={dataUsage}
+                  onChange={(e) => setDataUsage(e.target.value)}
+                />
+              </Form.Group>
+            </div>
           </Form>
         )}
         <Button

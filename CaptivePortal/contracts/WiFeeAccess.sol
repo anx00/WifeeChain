@@ -12,12 +12,15 @@ contract WiFeeAccess {
     InternetToken private internetToken;
     RecompenseToken private recompenseToken; // add RecompenseToken contract instance
 
+    // Modifying the Connection struct
     struct Connection {
         string mac;
         uint256 startTime;
         uint256 endTime;
         uint256 tokensPaid;
         bool isConnected;
+        uint256 bandwidth;     // bandwidth in Kbps
+        uint256 dataLimit;     // data usage limit
     }
 
     mapping(address => Connection) private connections;
@@ -57,7 +60,7 @@ contract WiFeeAccess {
         _;
     }
 
-constructor(
+    constructor(
         address wiFeeRegistryAddress,
         address payable internetTokenAddress,
         address payable recompenseTokenAddress // add address for RecompenseToken
@@ -107,10 +110,13 @@ constructor(
         return totalPrice;
     }
 
+    // Modifying the connect function to accept bandwidth and dataLimit parameters
     function connect(
         uint256 userToken,
         string memory mac,
-        uint256 duration
+        uint256 duration,
+        uint256 bandwidth,     // add bandwidth parameter
+        uint256 dataLimit      // add dataLimit parameter
     ) public onlyUser(userToken) validUserToken(userToken) {
         WiFeeRegistry.AccessPoint memory ap = wiFeeRegistry.getAPInfo(mac);
         require(ap.active, "Access point not active");
@@ -119,14 +125,13 @@ constructor(
         require(!userConnection.isConnected, "User is already connected");
 
         uint256 startTime = block.timestamp;
-        uint256 endTime = startTime + duration;
+        uint256 endTime = startTime + duration * 60;
         require(
             endTime <= startTime + ap.maxTime,
             "Duration exceeds access point max time"
         );
 
-        uint256 durationInMinutes = (duration + 30) / 60;
-        uint256 paymentAmount = durationInMinutes * ap.price * internetToken.tokenPrice();
+        uint256 paymentAmount = duration * ap.price * internetToken.tokenPrice();
 
         uint256 userTokenBalance = internetToken.balanceOf(msg.sender);
         require(
@@ -143,6 +148,8 @@ constructor(
         userConnection.endTime = endTime;
         userConnection.tokensPaid = paymentAmount;
         userConnection.isConnected = true;
+        userConnection.bandwidth = bandwidth;     
+        userConnection.dataLimit = dataLimit;     
 
         emit Connected(userToken, mac, startTime, endTime);
     }
@@ -188,6 +195,13 @@ constructor(
         uint256 actualDurationMinutes = (actualDurationSeconds + 30) / 60;
         uint256 reward = actualDurationMinutes * 10 ** 18; 
         return reward;
+    }
+
+    // Ffunction to retrieve the bandwidth and data limit of a connection
+    function getConnectionBandwidthDataLimit(uint256 userToken) public view validUserToken(userToken) returns (uint256, uint256) {
+        address user = getTokenOwner(userToken);
+        Connection memory userConnection = connections[user];
+        return (userConnection.bandwidth, userConnection.dataLimit);
     }
 
 
