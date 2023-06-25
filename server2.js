@@ -6,8 +6,6 @@ const app = express();
 require('dotenv').config();
 app.use(express.json());
 
-const latitude = process.env.LATITUDE;
-const longitude = process.env.LONGITUDE;
 const web3 = new Web3(process.env.WEB3_URL);
 const contractABI = JSON.parse(fs.readFileSync('./contractsABI/WiFeeAccess.json', 'utf-8')).abi;
 const contractAddress = JSON.parse(fs.readFileSync('./contractsABI/WiFeeAccess-address.json', 'utf-8')).address;
@@ -34,10 +32,9 @@ async function getLeaseData(clientIp) {
   return leaseData;
 }
 
-// Function to retrieve ssid and bssid
-function getSsidAndBssid() {
+function getSsidAndBssid(interfaceName) {
   return new Promise((resolve, reject) => {
-    exec('sudo iw wlan1 info', (error, stdout, stderr) => {
+    exec(`sudo iw ${interfaceName} info`, (error, stdout, stderr) => {
       if (error) {
         reject(`Command execution error: ${error.message}`);
         return;
@@ -62,6 +59,7 @@ function getSsidAndBssid() {
     });
   });
 }
+
 
 // Function to retrieve client IP
 function getClientIp(req) {
@@ -172,6 +170,26 @@ async function checkForDisconnectedClients() {
     });
   }
 
+
+// Endpoint to retrieve SSID and BSSID
+app.post('/wifi-info', async (req, res) => {
+  const { interfaceName } = req.body;
+
+  if (!interfaceName) {
+    res.status(400).json({ error: 'Missing interfaceName in the request body' });
+    return;
+  }
+
+  try {
+    const { ssid, bssid } = await getSsidAndBssid(interfaceName);
+    res.status(200).json({ ssid, bssid });
+  } catch (error) {
+    console.error('Error retrieving SSID and BSSID:', error);
+    res.status(500).json({ error: 'Error retrieving SSID and BSSID' });
+  }
+});
+
+
 // ENDPOINT to obtain the ap info
 app.post('/ap-info', async (req, res) => {
     console.log("[AP-INFO] Received a request for AP info");
@@ -183,33 +201,10 @@ app.post('/ap-info', async (req, res) => {
     
     let leaseData = await getLeaseData(clientIp);
     console.log("[AP-INFO] Lease data: ", leaseData);
-
-    // const location = req.body.location;
-    // console.log(`[AP-INFO] Location is: ${location}`);
-    // //print env file location variables
-    // console.log(`[AP-INFO] Latitude is: ${latitude}`);
-    // console.log(`[AP-INFO] Longitude is: ${longitude}`);
-    // //print req body location variables
-    // console.log(`[AP-INFO] Latitude is: ${location.latitude}`);
-    // console.log(`[AP-INFO] Longitude is: ${location.longitude}`);
-
-    // // Check if location object contains required properties
-    // if (!location || !location.latitude || !location.longitude) {
-    //   console.log("[AP-INFO] Incorrect location format received");
-    //   res.status(400).json({ error: 'Incorrect location format' });
-    //   return;
-    // }
-
-    // // Check if the latitude and longitude match the one provided in .env
-    // if (location.latitude !== latitude || location.longitude !== longitude) {
-    //   console.log("[AP-INFO] Mismatch in location");
-    //   res.status(403).json({ error: 'Mismatch in location' });
-    //   return;
-    // }
   
     if (leaseData) {
       try {
-        const { ssid, bssid } = await getSsidAndBssid();
+        const { ssid, bssid } = await getSsidAndBssid("wlan1");
         console.log(`[AP-INFO] Retrieved SSID: ${ssid} and BSSID: ${bssid}`);
         
         const userToken = req.body.userToken; 

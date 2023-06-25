@@ -88,12 +88,15 @@ const ConnectToAP = ({ connectAccessPointAddress, location }) => {
 
           console.log("apMaxTime:", apMaxTime, typeof apMaxTime);
 
+          const OwnerRTKQuantity = await contract.methods.getOwnerRTK(mac).call();
+          console.log("AP Owner RTK:", OwnerRTKQuantity);
+
           if (intDuration <= apMaxTime) {
             console.log("Connecting to the Access Point...");
 
             Swal.fire({
               title: "Confirm purchase",
-              html: `This connection will cost ${totalPrice} ITK.`,
+              html: `This connection will cost ${totalPrice} ITK.<br><span style="font-size: 14px;">The owner of this AP has <span style="color: ${OwnerRTKQuantity < 10 ? 'red' : OwnerRTKQuantity >= 11 && OwnerRTKQuantity <= 19 ? 'yellow' : 'green'}">${OwnerRTKQuantity}</span> RTK</span>`,
               showCancelButton: true,
               confirmButtonText: "Yes, buy",
               cancelButtonText: "No, cancel",
@@ -242,9 +245,9 @@ const ConnectToAP = ({ connectAccessPointAddress, location }) => {
               <Form.Group controlId="duration">
                 <Form.Label>Duration: {duration} minutes</Form.Label>
                 <Form.Range
-                  min="30"
+                  min="1"
                   max="120"
-                  step="30"
+                  step="1"
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
                 />
@@ -253,9 +256,9 @@ const ConnectToAP = ({ connectAccessPointAddress, location }) => {
               <Form.Group controlId="bandwidth">
                 <Form.Label>Bandwidth: {bandwidth} Mbps</Form.Label>
                 <Form.Range
-                  min="10"
+                  min="1"
                   max="100"
-                  step="30"
+                  step="1"
                   value={bandwidth}
                   onChange={(e) => setBandwidth(e.target.value)}
                 />

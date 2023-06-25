@@ -111,15 +111,14 @@ const CheckClients = ({ wiFeeAccessAddress }) => {
           .getConnectionInfo(userToken)
           .call();
 
-        const usageData = await contract.methods
+          const bandwidDataLimit = await contract.methods
           .getConnectionBandwidthDataLimit(userToken)
           .call();
-
-        const bandwidth = usageData.bandwidth;
-        const dataLimit = usageData.dataLimit;
   
         const startTime = new Date(connectionInfo.startTime * 1000); // Convert Unix timestamp to milliseconds
         const endTime = new Date(connectionInfo.endTime * 1000);
+        const bandwidth = bandwidthDataLimitResult[0];
+        const dataLimit = bandwidthDataLimitResult[1];
   
         const currentTime = new Date(); // Get the current time
   

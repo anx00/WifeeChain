@@ -52,36 +52,21 @@ function App() {
           <Route
             path="/register-access-point"
             element={
-              <Container>
+              <Container style={{ paddingTop: "80px" }}>
                 <RegisterAccessPoint
                   registerAccessPointAddress={registerAccessPointAddress}
                 />
-                <SearchAccessPoint
+                {/* <SearchAccessPoint
                   registerAccessPointAddress={registerAccessPointAddress}
-                />
+                /> */}
               </Container>
             }
           />
           <Route
-            path="/connect-access-point"
+            path="/check-access-point"
             element={
-              <Container>
-                <h2>Conectarse a un Access Point / Comprobar access point</h2>
-                {/* <GetUserTokenButton
-                  connectAccessPointAddress={connectAccessPointAddress}
-                /> */}
-                {/* <UserTokenInput 
-                  userToken={userToken}
-                  setUserToken={setUserToken}
-                /> */}
-                {/* <ConnectToAP
-                  connectAccessPointAddress={connectAccessPointAddress}
-                  userToken={userToken}
-                />
-                <DisconnectFromAP
-                  connectAccessPointAddress={connectAccessPointAddress}
-                  userToken={userToken}
-                /> */}
+              <Container style={{ paddingTop: "80px" }}>
+                <h2>Check Access Point Data</h2>
                 <CheckClients wiFeeAccessAddress={connectAccessPointAddress} />
               </Container>
             }

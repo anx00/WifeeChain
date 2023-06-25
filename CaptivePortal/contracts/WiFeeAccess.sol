@@ -6,12 +6,10 @@ import "./InternetToken.sol";
 import "./RecompenseToken.sol";
 import "hardhat/console.sol";
 
-
 contract WiFeeAccess {
     WiFeeRegistry private wiFeeRegistry;
     InternetToken private internetToken;
-    RecompenseToken private recompenseToken; // add RecompenseToken contract instance
-
+    RecompenseToken private recompenseToken;
     // Modifying the Connection struct
     struct Connection {
         string mac;
@@ -19,8 +17,8 @@ contract WiFeeAccess {
         uint256 endTime;
         uint256 tokensPaid;
         bool isConnected;
-        uint256 bandwidth;     // bandwidth in Kbps
-        uint256 dataLimit;     // data usage limit
+        uint256 bandwidth; // bandwidth in Kbps
+        uint256 dataLimit; // data usage limit
     }
 
     mapping(address => Connection) private connections;
@@ -72,20 +70,24 @@ contract WiFeeAccess {
     }
 
     // Function to get the start, actual, and end times of a connection
-    function getConnectionTimes(uint256 userToken) public view validUserToken(userToken) returns (uint256, uint256, uint256) {
+    function getConnectionTimes(
+        uint256 userToken
+    )
+        public
+        view
+        validUserToken(userToken)
+        returns (uint256, uint256, uint256)
+    {
         address user = getTokenOwner(userToken);
         Connection memory userConnection = connections[user];
         uint256 actualTime = block.timestamp;
         return (userConnection.startTime, actualTime, userConnection.endTime);
     }
 
-
     // Funcion para obtener la información de un access point
-    function getAPInfo(string memory _mac)
-        public
-        view
-        returns (WiFeeRegistry.AccessPoint memory)
-    {
+    function getAPInfo(
+        string memory _mac
+    ) public view returns (WiFeeRegistry.AccessPoint memory) {
         return wiFeeRegistry.getAPInfo(_mac);
     }
 
@@ -115,8 +117,8 @@ contract WiFeeAccess {
         uint256 userToken,
         string memory mac,
         uint256 duration,
-        uint256 bandwidth,     // add bandwidth parameter
-        uint256 dataLimit      // add dataLimit parameter
+        uint256 bandwidth, // add bandwidth parameter
+        uint256 dataLimit // add dataLimit parameter
     ) public onlyUser(userToken) validUserToken(userToken) {
         WiFeeRegistry.AccessPoint memory ap = wiFeeRegistry.getAPInfo(mac);
         require(ap.active, "Access point not active");
@@ -126,12 +128,24 @@ contract WiFeeAccess {
 
         uint256 startTime = block.timestamp;
         uint256 endTime = startTime + duration * 60;
+
         require(
             endTime <= startTime + ap.maxTime,
             "Duration exceeds access point max time"
         );
 
-        uint256 paymentAmount = duration * ap.price * internetToken.tokenPrice();
+        require(
+            bandwidth <= ap.bandwidthLimit,
+            "Bandwidth exceeds access point max bandwidth"
+        );
+        require(
+            dataLimit <= ap.dataLimit,
+            "Data usage limit exceeds access point max data usage limit"
+        );
+
+        uint256 paymentAmount = duration *
+            ap.price *
+            internetToken.tokenPrice();
 
         uint256 userTokenBalance = internetToken.balanceOf(msg.sender);
         require(
@@ -148,8 +162,8 @@ contract WiFeeAccess {
         userConnection.endTime = endTime;
         userConnection.tokensPaid = paymentAmount;
         userConnection.isConnected = true;
-        userConnection.bandwidth = bandwidth;     
-        userConnection.dataLimit = dataLimit;     
+        userConnection.bandwidth = bandwidth;
+        userConnection.dataLimit = dataLimit;
 
         emit Connected(userToken, mac, startTime, endTime);
     }
@@ -158,19 +172,23 @@ contract WiFeeAccess {
         address userAddress = getTokenOwner(userToken);
         Connection storage userConnection = connections[userAddress];
         require(userConnection.isConnected, "User is not connected");
-        require(msg.sender == wiFeeRegistry.getAPInfo(userConnection.mac).owner, "Only the AP owner can disconnect a user");
+        require(
+            msg.sender == wiFeeRegistry.getAPInfo(userConnection.mac).owner,
+            "Only the AP owner can disconnect a user"
+        );
 
-        WiFeeRegistry.AccessPoint memory ap = wiFeeRegistry.getAPInfo(userConnection.mac);
+        WiFeeRegistry.AccessPoint memory ap = wiFeeRegistry.getAPInfo(
+            userConnection.mac
+        );
 
         uint256 actualEndTime = block.timestamp;
         //uint256 actualDuration = actualEndTime - userConnection.startTime;
-        uint256 actualDurationSeconds = actualEndTime - userConnection.startTime;
+        uint256 actualDurationSeconds = actualEndTime -
+            userConnection.startTime;
         uint256 actualDurationMinutes = (actualDurationSeconds + 30) / 60; // Rounds to nearest minute
         uint256 tokensForOwner = actualDurationMinutes * ap.price * 10 ** 18;
 
         // If the user disconnects early, refund the remaining tokens
-        console.log("actualEndTime: %s", actualEndTime);
-        console.log("userConnection.endTime: %s", userConnection.endTime);
         if (actualEndTime < userConnection.endTime) {
             uint256 refundAmount = userConnection.tokensPaid - tokensForOwner;
             internetToken.transfer(userAddress, refundAmount);
@@ -178,9 +196,13 @@ contract WiFeeAccess {
 
         internetToken.transfer(ap.owner, tokensForOwner);
 
-        // Reward user with Recompense tokens based on the actual duration of the connection
-        uint256 rewardAmount = calculateReward(userConnection.startTime, actualEndTime);
+        // Reward user and AP owner with Recompense tokens based on the actual duration of the connection
+        uint256 rewardAmount = calculateReward(
+            userConnection.startTime,
+            actualEndTime
+        );
         recompenseToken.mint(userAddress, rewardAmount);
+        recompenseToken.mint(ap.owner, rewardAmount);
 
         userConnection.isConnected = false;
         _removeUserTokenFromAP(userConnection.mac, userToken);
@@ -190,23 +212,26 @@ contract WiFeeAccess {
     }
 
     // Function to calculate reward based on the duration of the connection
-    function calculateReward(uint256 startTime, uint256 endTime) private pure returns (uint256) {
+    function calculateReward(
+        uint256 startTime,
+        uint256 endTime
+    ) private pure returns (uint256) {
         uint256 actualDurationSeconds = endTime - startTime;
         uint256 actualDurationMinutes = (actualDurationSeconds + 30) / 60;
-        uint256 reward = actualDurationMinutes * 10 ** 18; 
+        uint256 reward = actualDurationMinutes * 10 ** 18;
         return reward;
     }
 
-    // Ffunction to retrieve the bandwidth and data limit of a connection
-    function getConnectionBandwidthDataLimit(uint256 userToken) public view validUserToken(userToken) returns (uint256, uint256) {
+    // Function to retrieve the bandwidth and data limit of a connection
+    function getConnectionBandwidthDataLimit(
+        uint256 userToken
+    ) public view validUserToken(userToken) returns (uint256, uint256) {
         address user = getTokenOwner(userToken);
         Connection memory userConnection = connections[user];
         return (userConnection.bandwidth, userConnection.dataLimit);
     }
 
-
     // la generación de tokens no es segura sin oráculo
-    // el oráculo requiere de LINK
     // Se podrían crear una función para que se creen previamente y luego se asignen a usuarios, pero no generarse por los usuarios.
     function createTokenForUser() public {
         //require(userToToken[msg.sender] == 0, "User already has a token");
@@ -273,5 +298,37 @@ contract WiFeeAccess {
 
     function isTokenValid(uint256 userToken) private view returns (bool) {
         return tokenToUser[userToken] != address(0);
+    }
+
+    /*
+        RTK Token Logic
+    */
+
+    // Function to check if an AP is trusted
+    function getOwnerRTK(string memory _mac) public view returns (uint256) {
+        // Get the AccessPoint info
+        WiFeeRegistry.AccessPoint memory ap = wiFeeRegistry.getAPInfo(_mac);
+
+        // Get the balance of the AP owner
+        uint256 ownerBalance = recompenseToken.balanceOf(ap.owner);
+
+        // Return whether the owner has at least 1 RTK
+        return ownerBalance / 10 ** 18;
+        // assuming RTK also has 18 decimals.
+    }
+
+    // Function to check if an user is trusted
+    function getUserRTK(
+        uint256 userToken
+    ) public view validUserToken(userToken) returns (uint256) {
+        // Get the address of the user from the userToken
+        address userAddress = getTokenOwner(userToken);
+
+        // Get the balance of the user
+        uint256 userBalance = recompenseToken.balanceOf(userAddress);
+
+        // Return whether the user has at least 1 RTK
+        return userBalance / 10 ** 18;
+        // assuming RTK also has 18 decimals.
     }
 }

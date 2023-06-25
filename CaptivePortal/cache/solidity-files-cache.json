@@ -185,8 +185,8 @@
       ]
     },
     "C:\\Users\\anxoo\\OneDrive\\Escritorio\\COSAS IMPORTANTES\\Informatica\\MUniCS\\TFM\\OpenWiFee\\CaptivePortal\\contracts\\WiFeeAccess.sol": {
-      "lastModificationDate": 1687288928889,
-      "contentHash": "b5334b4ff593da88032d6a889c3eeb07",
+      "lastModificationDate": 1687695882735,
+      "contentHash": "1cb20300b66e65bc933a5efa0ea65c0b",
       "sourceName": "contracts/WiFeeAccess.sol",
       "solcConfig": {
         "version": "0.8.0",
@@ -225,8 +225,8 @@
       ]
     },
     "C:\\Users\\anxoo\\OneDrive\\Escritorio\\COSAS IMPORTANTES\\Informatica\\MUniCS\\TFM\\OpenWiFee\\CaptivePortal\\contracts\\WiFeeRegistry.sol": {
-      "lastModificationDate": 1684339451374,
-      "contentHash": "fc9174ebeb4bbe5b1c33ae422588e9c9",
+      "lastModificationDate": 1687690526766,
+      "contentHash": "4e2b138aa2a825ffcdee1cc293a05c87",
       "sourceName": "contracts/WiFeeRegistry.sol",
       "solcConfig": {
         "version": "0.8.0",
@@ -295,8 +295,8 @@
       ]
     },
     "C:\\Users\\anxoo\\OneDrive\\Escritorio\\COSAS IMPORTANTES\\Informatica\\MUniCS\\TFM\\OpenWiFee\\CaptivePortal\\contracts\\RecompenseToken.sol": {
-      "lastModificationDate": 1686829978592,
-      "contentHash": "24d29b3d70b6452577254e3d983789c8",
+      "lastModificationDate": 1687694494279,
+      "contentHash": "bc23c3d7992383358f6581163e5cd201",
       "sourceName": "contracts/RecompenseToken.sol",
       "solcConfig": {
         "version": "0.8.0",
@@ -322,6 +322,7 @@
         }
       },
       "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
         "@openzeppelin/contracts/token/ERC20/ERC20.sol"
       ],
       "versionPragmas": [
@@ -329,6 +330,78 @@
       ],
       "artifacts": [
         "RecompenseToken"
+      ]
+    },
+    "C:\\Users\\anxoo\\node_modules\\@openzeppelin\\contracts\\access\\Ownable.sol": {
+      "lastModificationDate": 1676203238681,
+      "contentHash": "e436cea06129be2c73cda4b1acc848b5",
+      "sourceName": "@openzeppelin/contracts/access/Ownable.sol",
+      "solcConfig": {
+        "version": "0.8.0",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../utils/Context.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "Ownable"
+      ]
+    },
+    "C:\\Users\\anxoo\\OneDrive\\Escritorio\\COSAS IMPORTANTES\\Informatica\\MUniCS\\TFM\\OpenWiFee\\CaptivePortal\\contracts\\Oracle.sol": {
+      "lastModificationDate": 1687684666198,
+      "contentHash": "7a521dc062931bae403fff704a0f0714",
+      "sourceName": "contracts/Oracle.sol",
+      "solcConfig": {
+        "version": "0.8.0",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "Oracle"
       ]
     }
   }
