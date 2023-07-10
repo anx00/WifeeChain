@@ -3,13 +3,13 @@ pragma solidity ^0.8.0;
 
 import "./WiFeeRegistry.sol";
 import "./InternetToken.sol";
-import "./RecompenseToken.sol";
+import "./RewardToken.sol";
 import "hardhat/console.sol";
 
 contract WiFeeAccess {
     WiFeeRegistry private wiFeeRegistry;
     InternetToken private internetToken;
-    RecompenseToken private recompenseToken;
+    RewardToken private rewardToken;
     // Modifying the Connection struct
     struct Connection {
         string mac;
@@ -61,11 +61,11 @@ contract WiFeeAccess {
     constructor(
         address wiFeeRegistryAddress,
         address payable internetTokenAddress,
-        address payable recompenseTokenAddress // add address for RecompenseToken
+        address payable rewardTokenAddress // add address for RewardToken
     ) {
         wiFeeRegistry = WiFeeRegistry(wiFeeRegistryAddress);
         internetToken = InternetToken(internetTokenAddress);
-        recompenseToken = RecompenseToken(recompenseTokenAddress); // initialize RecompenseToken instance
+        rewardToken = RewardToken(rewardTokenAddress); // initialize RewardToken instance
         owner = payable(msg.sender);
     }
 
@@ -196,13 +196,13 @@ contract WiFeeAccess {
 
         internetToken.transfer(ap.owner, tokensForOwner);
 
-        // Reward user and AP owner with Recompense tokens based on the actual duration of the connection
+        // Reward user and AP owner with Reward tokens based on the actual duration of the connection
         uint256 rewardAmount = calculateReward(
             userConnection.startTime,
             actualEndTime
         );
-        recompenseToken.mint(userAddress, rewardAmount);
-        recompenseToken.mint(ap.owner, rewardAmount);
+        rewardToken.mint(userAddress, rewardAmount);
+        rewardToken.mint(ap.owner, rewardAmount);
 
         userConnection.isConnected = false;
         _removeUserTokenFromAP(userConnection.mac, userToken);
@@ -305,7 +305,7 @@ contract WiFeeAccess {
         WiFeeRegistry.AccessPoint memory ap = wiFeeRegistry.getAPInfo(_mac);
 
         // Get the balance of the AP owner
-        uint256 ownerBalance = recompenseToken.balanceOf(ap.owner);
+        uint256 ownerBalance = rewardToken.balanceOf(ap.owner);
 
         // Return whether the owner has at least 1 RTK
         return ownerBalance / 10 ** 18;
@@ -320,7 +320,7 @@ contract WiFeeAccess {
         address userAddress = getTokenOwner(userToken);
 
         // Get the balance of the user
-        uint256 userBalance = recompenseToken.balanceOf(userAddress);
+        uint256 userBalance = rewardToken.balanceOf(userAddress);
 
         // Return whether the user has at least 1 RTK
         return userBalance / 10 ** 18;

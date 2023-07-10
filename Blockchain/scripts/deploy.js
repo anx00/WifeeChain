@@ -17,20 +17,20 @@ async function main() {
   console.log('InternetToken deployed at:', internetToken.address);
 
   // Add these lines
-  const RecompenseToken = await ethers.getContractFactory('RecompenseToken');
-  const recompenseToken = await RecompenseToken.deploy();
-  await recompenseToken.deployed();
-  console.log('RecompenseToken deployed at:', recompenseToken.address);
+  const RewardToken = await ethers.getContractFactory('RewardToken');
+  const rewardToken = await RewardToken.deploy();
+  await rewardToken.deployed();
+  console.log('RewardToken deployed at:', rewardToken.address);
   // Add ends
 
   const WiFeeAccess = await ethers.getContractFactory('WiFeeAccess');
-  const wiFeeAccess = await WiFeeAccess.deploy(wiFeeRegistry.address, internetToken.address, recompenseToken.address);
+  const wiFeeAccess = await WiFeeAccess.deploy(wiFeeRegistry.address, internetToken.address, rewardToken.address);
   await wiFeeAccess.deployed();
   console.log('WiFeeAccess deployed at:', wiFeeAccess.address);
 
   saveFrontendFiles(wiFeeRegistry, 'WiFeeRegistry');
   saveFrontendFiles(internetToken, 'InternetToken');
-  saveFrontendFiles(recompenseToken, 'RecompenseToken'); // Save RecompenseToken contract as well
+  saveFrontendFiles(rewardToken, 'RewardToken'); // Save RewardToken contract as well
   saveFrontendFiles(wiFeeAccess, 'WiFeeAccess');
 }
 
