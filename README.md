@@ -8,7 +8,7 @@ The proposed WifeeChain system is designed around two main roles: access point o
 
 To establish a full Internet connection, users must interact with a captive portal hosted within the access point itself. This captive portal serves as the interface between the user and the underlying blockchain technology. Upon connecting to the access point, users are redirected to the captive portal, where they follow intuitive steps. This process ensures user security, privacy, and allows them to acquire the system's native token, ITK, from a marketplace within the portal. Users can then use ITK to pay for the desired resources and customize their Internet connection according to their preferences.
 
-Furthermore, the system provides users with visibility into the reputation of each access point. The reputation is represented by the amount of Recompense Tokens (RTK) owned by the access point owner. This feature enables users to make more informed decisions about which access point to connect to.
+Furthermore, the system provides users with visibility into the reputation of each access point. The reputation is represented by the amount of Reward       Tokens (RTK) owned by the access point owner. This feature enables users to make more informed decisions about which access point to connect to.
 
 For the system to operate effectively, access points have critical functions. They continuously monitor and communicate with the blockchain to implement necessary changes, modify configurations, and update firewall rules on the device itself.
 
@@ -83,3 +83,7 @@ The captive portal serves as the primary authentication system for users to acce
 3. Include web3 files: Place the addresses and ABI files of the deployed smart contracts under the src folder.
 4. Build the project: Build the project by running **`npm run build`** to generate the dist folder, which will be used for production.
 5. Start the captive portal: Copy the generated dist folder to \etcginxsites-available and start the nginx service with the command **`systemctl nginx start`**.
+
+## License
+
+GPL-3.0
